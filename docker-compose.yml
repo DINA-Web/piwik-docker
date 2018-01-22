@@ -19,17 +19,17 @@ services:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - ./certs:/etc/nginx/certs
 
-  dnsdock:
-    # for this to work, the host machine needs /etc/resolvconf configs
-    # see instructions at https://github.com/mskyttner/dns-test-docker
-    # the aacebedo image is an update of tonistiigi/dnsdock:amd64-1.13.1
-    # which has Dockerfile and docs available at Docker Hub
-    # (note the static ip on the docker bridge)
-    image: aacebedo/dnsdock:v1.15.0-amd64
+  dnsmasq:
+    image: andyshinn/dnsmasq:2.76
+    command: --log-facility=- --server=127.0.0.11 --server=193.10.57.11 --server=8.8.8.8 --server=172.16.0.72 --server=172.16.0.7 --neg-ttl=3600 --cache-size=1000 --max-cache-ttl=3600 --min-cache-ttl=3600 --all-servers
+    cap_add: 
+      - NET_ADMIN
     ports:
-     - 172.17.0.1:53:53/udp
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - 172.17.0.1:53:53/tcp
+      - 172.17.0.1:53:53/udp
+    links:
+      - proxy:piwik.docker
+      - proxy:welcome.docker
 
   web:
     # this is "routing" all web traffic and knows
@@ -41,6 +41,8 @@ services:
     volumes:
       - ./index.html:/usr/share/nginx/html/index.html
       - ./app.conf:/etc/nginx/conf.d/app.conf
+    depends_on: 
+      - piwikweb
       
   piwikdb:
     image: mysql
