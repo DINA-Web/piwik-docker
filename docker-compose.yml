@@ -29,7 +29,7 @@ services:
       - 172.17.0.1:53:53/udp
     links:
       - proxy:piwik.docker
-      - proxy:welcome.docker
+      - proxy:welcome.docker 
 
   web:
     # this is "routing" all web traffic and knows
