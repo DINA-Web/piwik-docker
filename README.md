@@ -26,6 +26,7 @@ To illustrate a common data migration path, you can proceed like this:
 		# start service again
 		make up
 
+Before you start you need to generate the SSL-certs, run `make ssl-certs`, the certs will end up in the 'certs'-directory.
 Then use the Makefile to start the system and issue `make test` to open the service from your local browser - it will take you to "piwik.docker". 
 
 The first time piwik starts, it may need to migrate the db to a newer version of the schema, so a wizard opens up, the details to provide then are the credentials you reference in the `docker-compose.yml`-file, for example: 
