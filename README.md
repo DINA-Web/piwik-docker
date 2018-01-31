@@ -31,7 +31,7 @@ Then use the Makefile to start the system and issue `make test` to open the serv
 The first time piwik starts, it may need to migrate the db to a newer version of the schema, so a wizard opens up, the details to provide then are the credentials you reference in the `docker-compose.yml`-file, for example: 
 
 		servername: db
-		username: root
+		login: root
 		password: passw0rd12
 		database: piwik
 

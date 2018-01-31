@@ -1,35 +1,31 @@
 version: '3'
 
+volumes:
+  db_data_piwik:
+  file_data_piwik:
+
 services:
       
-  proxy:
-    # this receives outside http/https traffic and
-    # routes it to services in the SDN, it also
-    # sets up SSL and offer the only open ports to
-    # the outside - 80 and 443, we configure it
-    # with a dnddock alias to allow testing it easily from the
-    # host machine running these docker services
-    image: jwilder/nginx-proxy
-    environment:
-      - DNSDOCK_ALIAS=piwik.docker
+  dnsmasq:
+    image: andyshinn/dnsmasq:2.76
+    command: --log-facility=-
+    cap_add: 
+      - NET_ADMIN
     ports:
-      - "80:80"
-      - "443:443"
+      - 172.17.0.1:53:53/tcp
+      - 172.17.0.1:53:53/udp
+    links:
+      - proxy:piwik.docker
+      - proxy:welcome.docker
+
+  proxy:
+    image: jwilder/nginx-proxy:alpine
+    ports:
+      - 80:80
+      - 443:443
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - ./certs:/etc/nginx/certs
-
-  dnsdock:
-    # for this to work, the host machine needs /etc/resolvconf configs
-    # see instructions at https://github.com/mskyttner/dns-test-docker
-    # the aacebedo image is an update of tonistiigi/dnsdock:amd64-1.13.1
-    # which has Dockerfile and docs available at Docker Hub
-    # (note the static ip on the docker bridge)
-    image: aacebedo/dnsdock:v1.15.0-amd64
-    ports:
-     - 172.17.0.1:53:53/udp
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
 
   web:
     # this is "routing" all web traffic and knows
@@ -41,6 +37,8 @@ services:
     volumes:
       - ./index.html:/usr/share/nginx/html/index.html
       - ./app.conf:/etc/nginx/conf.d/app.conf
+    depends_on:
+      - piwikweb
       
   piwikdb:
     image: mysql
@@ -58,17 +56,23 @@ services:
       - ./config.ini.php:/var/www/html/config/config.ini.php
     links:
       - piwikdb:db
+    depends_on:
+      - piwikdb
 
   piwikweb:
     image: nginx
+    hostname: piwik
+    domainname: docker
     container_name: piwikweb
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - file_data_piwik:/var/www/html
     links:
       - piwikapp:app
+    depends_on:
+      - piwikapp
 
-  piwikneo:
+  matomo:
     image: piwik:3.0.4-apache
     hostname: welcome
     domainname: docker
@@ -77,17 +81,26 @@ services:
     environment:
       - VIRTUAL_HOST=welcome.docker
       - VIRTUAL_PORT=80
-      - DNSDOCK_ALIAS=welcome.docker
+    depends_on:
+      - piwikdb
+
+  matomo2:
+    image: piwik:3.3.0-apache
+    hostname: welcome
+    domainname: docker
+    links:
+      - piwikdb:db
+    environment:
+      - VIRTUAL_HOST=welcome.docker
+      - VIRTUAL_PORT=80
+    depends_on:
+      - piwikdb
 
   cli:
     image: mysql
     command: mysql -h piwikdb -u root -p
     links:
       - piwikdb
-
-volumes:
-  db_data_piwik:
-  file_data_piwik:
 
 
 

@@ -1,6 +1,7 @@
-#!make
+#! make
 
 PWD = $(shell pwd)
+TS = $(shell date +%Y%d%mT%H%M)
 
 all: up
 
@@ -43,8 +44,14 @@ down:
 clean: down
 	rm -rf srv
 
+blaha:
+	echo $(date +%Y%d%mT%H%M)
+
 backup-piwik:
-	docker-compose run piwikdb bash -c 'mysqldump --skip-lock-tables --single-transaction --all-databases --events -uroot -p$MYSQL_ROOT_PASSWORD' | gzip -9 > piwik_$(date +%Y%d%mT%H%M).sql.gz
+	docker run -it --net piwikdocker_default --link piwikdocker_piwikdb_1:mysql --rm mysql \
+		bash -c 'mysqldump --skip-lock-tables --single-transaction --databases piwik --events --protocol=tcp -h mysql -u root -ppassw0rd12' | gzip --best > piwik_$(TS).sql.gz
+
+#	docker-compose run piwikdb bash -c 'mysqldump --skip-lock-tables --single-transaction --all-databases --events -h 127.0.0.1 -u root -ppassw0rd12' | gzip --best > piwik_$(TS).sql.gz
 
 debug:
 	docker-compose run cli
