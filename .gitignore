@@ -1,0 +1,12 @@
+ca-key.pem
+ca.pem
+ca.srl
+cert.pem
+key.csr
+key.pem
+openssl.cnf
+piwik.docker.crt
+piwik.docker.key
+shared.crt
+shared.key
+
